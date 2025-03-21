@@ -1,9 +1,5 @@
-numpy==1.24.0
-joblib==1.4.2
-flask
-uuid
-flask_mail 
-datetime
-json
+Flask==2.0.1
+numpy==1.21.2
+joblib==1.0.1
 sqlite3
-numpy
+flask-mail==0.9.1
