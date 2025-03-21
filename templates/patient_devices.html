@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Critical Heart Alert System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a1a, #2e2e2e);
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .navbar {
+            background: #b30000 !important;
+        }
+        .navbar-brand, .nav-link {
+            color: #fff !important;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .card {
+            background: rgba(20, 20, 20, 0.9);
+            border: 1px solid #ff3333;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+        }
+        .card-header {
+            background: #ff3333;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .form-control, .form-select {
+            background: #333;
+            border: 1px solid #ff3333;
+            color: #fff;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #ff6666;
+            box-shadow: 0 0 5px #ff3333;
+        }
+        .btn-danger {
+            background: #ff3333;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        .btn-danger:hover {
+            background: #cc0000;
+            box-shadow: 0 0 10px #ff3333;
+        }
+        .danger {
+            background-color: rgba(255, 51, 51, 0.3);
+        }
+        .notification-sent::after {
+            content: "✉";
+            color: #ff6666;
+            font-size: 1.2em;
+            position: absolute;
+            top: 5px;
+            right: 5px;
+        }
+        .chat-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 90%;
+            max-width: 350px;
+            max-height: 500px;
+            background: rgba(20, 20, 20, 0.9);
+            border: 1px solid #ff3333;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+            display: none;
+            z-index: 1000;
+        }
+        .chat-header {
+            background: #ff3333;
+            color: #fff;
+            padding: 10px;
+        }
+        .chat-body {
+            padding: 10px;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+        .chat-message {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 5px;
+            color: #fff;
+        }
+        .chat-message.sent {
+            background: #b30000;
+            text-align: right;
+        }
+        .chat-message.received {
+            background: #4d0000;
+        }
+        .chat-footer .form-control {
+            background: #333;
+            border: 1px solid #ff3333;
+        }
+        .chat-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ff3333;
+            border: none;
+            z-index: 1000;
+        }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 768px) {
+            .navbar-nav {
+                text-align: center;
+            }
+            .chat-container {
+                width: 95%;
+                bottom: 10px;
+                right: 10px;
+            }
+            .chart-container {
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">Critical Heart Alert</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/patients">Patients</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/caregivers">Caregivers</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/devices">IoT Devices</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4 text-red-500">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>{{ patient.name }}'s Devices</h1>
+            <div>
+                <a href="/patients/{{ patient.id }}" class="btn btn-outline-primary">Back to Patient</a>
+                <a href="/devices/add" class="btn btn-primary">Add New Device</a>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Patient Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Age:</strong> {{ patient.age }} years</p>
+                        <p><strong>Gender:</strong> {{ patient.gender }}</p>
+                        {% if patient.medical_history %}
+                            <p><strong>Medical History:</strong> {{ patient.medical_history }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-8">
+                {% if devices %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Device ID</th>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Last Seen</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for device in devices %}
+                                    <tr>
+                                        <td>{{ device.device_id }}</td>
+                                        <td>{{ device.device_name }}</td>
+                                        <td>{{ device.device_type }}</td>
+                                        <td>
+                                            {% if device.status == 'active' %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% elif device.status == 'inactive' %}
+                                                <span class="badge bg-secondary">Inactive</span>
+                                            {% else %}
+                                                <span class="badge bg-warning text-dark">{{ device.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if device.last_seen %}
+                                                {{ device.last_seen }}
+                                            {% else %}
+                                                <span class="text-muted">Never</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="/devices/{{ device.device_id }}" class="btn btn-sm btn-outline-primary">View</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        No devices are currently assigned to this patient.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
