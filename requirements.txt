@@ -1,5 +1,4 @@
-Flask==2.0.1
-numpy==1.21.2
-joblib==1.0.1
-sqlite3
-flask-mail==0.9.1
+Flask==3.1.0
+numpy==1.26.4
+joblib==1.2.0
+Flask-Mail==0.10.0
