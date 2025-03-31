@@ -535,6 +535,10 @@
                         <td>${reading.body_temp}°C</td>
                         <td>${reading.tachycardia_pred == 1 ? 'Yes' : 'No'}</td>
                         <td>${reading.hypertrophy_pred == 1 ? 'Yes' : 'No'}</td>
+                       <td>
+  ${parseInt(reading.blood_pressure.split('/')[0], 10) >= 130 ? 'Yes' : 'No'}
+</td>
+
                     </tr>
                 `;
             });
