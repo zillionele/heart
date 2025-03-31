@@ -221,7 +221,7 @@
                     <tr>
                         <th>Time</th>
                         <th>Patient</th>
-                        <th>HR</th>
+<!--                         <th>HR</th> -->
                         <th>BP</th>
                         <th>SpO2</th>
                         <th>Temp</th>
@@ -235,7 +235,7 @@
                         <tr class="{{ 'danger' if reading.tachycardia_pred == 1 or reading.hypertrophy_pred == 1 or reading.cholesterol_pred == 1 or reading.heart_rate > 120 or reading.systolic > 160 or reading.diastolic > 100 or reading.spo2 < 92 }} {{ 'notification-sent' if reading.notification_sent == 1 }}">
                             <td>{{ reading.timestamp }}</td>
                             <td>{{ reading.patient_name }}</td>
-                            <td>{{ reading.heart_rate }} BPM</td>
+<!--                             <td>{{ reading.heart_rate }} BPM</td> -->
                             <td>{{ reading.blood_pressure }}</td>
                             <td>{{ reading.spo2 }}%</td>
                             <td>{{ reading.body_temp }}°C</td>
@@ -529,7 +529,7 @@
                     <tr class="${rowClass} ${notificationClass}">
                         <td>${reading.timestamp}</td>
                         <td>${reading.patient_name}</td>
-                        <td>${reading.heart_rate} BPM</td>
+                       
                         <td>${reading.blood_pressure}</td>
                         <td>${reading.spo2}%</td>
                         <td>${reading.body_temp}°C</td>
