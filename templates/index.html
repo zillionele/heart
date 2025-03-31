@@ -225,7 +225,7 @@
                         <th>BP</th>
                         <th>SpO2</th>
                         <th>Temp</th>
-                        <th>heart beats faster than normal</th>
+<!--                         <th>heart beats faster than normal</th> -->
                         <th>High blood pressure</th>
                         <!-- <th>Cholesterol</th> -->
                     </tr>
@@ -239,7 +239,7 @@
                             <td>{{ reading.blood_pressure }}</td>
                             <td>{{ reading.spo2 }}%</td>
                             <td>{{ reading.body_temp }}°C</td>
-                            <td>{{ "Yes" if reading.tachycardia_pred == 1 else "No" }}</td>
+<!--                             <td>{{ "Yes" if reading.tachycardia_pred == 1 else "No" }}</td> -->
                            <td>{{ "Yes" if reading.blood_pressure|int(default=0) >= 130 else "No" }}</td>
 
                             <!-- <td>{{ "Yes" if reading.cholesterol_pred == 1 else "No" }}</td> -->
@@ -533,8 +533,7 @@
                         <td>${reading.blood_pressure}</td>
                         <td>${reading.spo2}%</td>
                         <td>${reading.body_temp}°C</td>
-                        <td>${reading.tachycardia_pred == 1 ? 'Yes' : 'No'}</td>
-                        <td>${reading.hypertrophy_pred == 1 ? 'Yes' : 'No'}</td>
+                        
                        <td>
   ${parseInt(reading.blood_pressure.split('/')[0], 10) >= 130 ? 'Yes' : 'No'}
 </td>
