@@ -114,6 +114,19 @@
             height: 250px;
             margin-bottom: 20px;
         }
+        .reload-status {
+            color: #ff6666;
+            font-size: 0.8em;
+            text-align: right;
+        }
+        .pulse {
+            animation: pulse-animation 2s infinite;
+        }
+        @keyframes pulse-animation {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
         @media (max-width: 768px) {
             .navbar-nav {
                 text-align: center;
@@ -154,21 +167,29 @@
             </div>
         </div>
     </nav>
-
     <div class="container mt-4">
         <div class="row mb-4">
             <div class="col-12 text-center">
                 <h1 class="text-red-500 text-uppercase" style="text-shadow: 0 0 5px rgba(255, 0, 0, 0.7);">Emergency Dashboard</h1>
+                <div class="d-flex justify-content-end">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
+                        <label class="form-check-label" for="autoRefreshToggle">Auto Refresh</label>
+                    </div>
+                    <span id="nextRefresh" class="ms-3 reload-status pulse">Next refresh in: 10s</span>
+                </div>
             </div>
         </div>
-
-  
+ 
         <h2 class="text-uppercase text-red-500 mt-5 mb-3">Critical Trends</h2>
         <div class="row">
             <div class="col-md-6 col-12 mb-3">
                 <div class="card">
-                    <div class="card-header">
-                        <h5>Heart Rate</h5>
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Heart Rate</h5>
+                        <button class="btn btn-sm btn-dark refresh-chart" data-chart="heartRate">
+                            <span class="refresh-icon">↻</span>
+                        </button>
                     </div>
                     <div class="card-body">
                         <div class="chart-container">
@@ -179,8 +200,11 @@
             </div>
             <div class="col-md-6 col-12 mb-3">
                 <div class="card">
-                    <div class="card-header">
-                        <h5>Blood Pressure</h5>
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Blood Pressure</h5>
+                        <button class="btn btn-sm btn-dark refresh-chart" data-chart="bp">
+                            <span class="refresh-icon">↻</span>
+                        </button>
                     </div>
                     <div class="card-body">
                         <div class="chart-container">
@@ -190,7 +214,6 @@
                 </div>
             </div>
         </div>
-
         <h2 class="text-uppercase text-red-500 mb-3">Recent Alerts</h2>
         <div class="table-responsive">
             <table class="table table-dark table-hover">
@@ -202,9 +225,9 @@
                         <th>BP</th>
                         <th>SpO2</th>
                         <th>Temp</th>
-                        <th>Tachycardia</th>
-                        <th>Hypertrophy</th>
-                        <th>Cholesterol</th>
+                        <th>heart beats faster than normal</th>
+                        <th>High blood pressure</th>
+                        <!-- <th>Cholesterol</th> -->
                     </tr>
                 </thead>
                 <tbody id="readings-table">
@@ -218,15 +241,13 @@
                             <td>{{ reading.body_temp }}°C</td>
                             <td>{{ "Yes" if reading.tachycardia_pred == 1 else "No" }}</td>
                             <td>{{ "Yes" if reading.hypertrophy_pred == 1 else "No" }}</td>
-                            <td>{{ "Yes" if reading.cholesterol_pred == 1 else "No" }}</td>
+                            <!-- <td>{{ "Yes" if reading.cholesterol_pred == 1 else "No" }}</td> -->
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-
         <button class="btn btn-danger chat-btn" id="toggle-chat">Alert Chat</button>
-
         <div class="chat-container" id="chat-container">
             <div class="chat-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Emergency Chat</h5>
@@ -276,7 +297,7 @@
                 </div>
             </div>
         </div>
-        
+       
         <div class="col-md-6 col-12 mb-3">
             {% if selected_patient %}
                 <div class="card">
@@ -310,7 +331,6 @@
             {% endif %}
         </div>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Initialize Charts
@@ -338,10 +358,13 @@
                 plugins: {
                     legend: { labels: { color: '#fff' } },
                     title: { display: true, text: 'Heart Rate Crisis', color: '#ff3333' }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart'
                 }
             }
         });
-
         const bpCtx = document.getElementById('bpChart').getContext('2d');
         const bpChart = new Chart(bpCtx, {
             type: 'line',
@@ -362,70 +385,189 @@
                 plugins: {
                     legend: { labels: { color: '#fff' } },
                     title: { display: true, text: 'BP Crisis', color: '#ff3333' }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart'
                 }
             }
         });
 
+        // Auto-refresh setup
+        let refreshInterval = 10; // seconds
+        let currentTimer = refreshInterval;
+        let timerInterval;
+        const nextRefreshElement = document.getElementById('nextRefresh');
+        const autoRefreshToggle = document.getElementById('autoRefreshToggle');
+        
+        // Function to update the countdown timer
+        function updateTimer() {
+            currentTimer--;
+            if (currentTimer <= 0) {
+                refreshReadings();
+                currentTimer = refreshInterval;
+            }
+            
+            // Update the countdown display
+            nextRefreshElement.textContent = `Next refresh in: ${currentTimer}s`;
+            
+            // Add visual indicator when refresh is imminent
+            if (currentTimer <= 3) {
+                nextRefreshElement.classList.add('text-danger', 'fw-bold');
+            } else {
+                nextRefreshElement.classList.remove('text-danger', 'fw-bold');
+            }
+        }
+        
+        // Initialize the timer
+        timerInterval = setInterval(updateTimer, 1000);
+        
+        // Toggle auto-refresh
+        autoRefreshToggle.addEventListener('change', function() {
+            if (this.checked) {
+                currentTimer = refreshInterval;
+                timerInterval = setInterval(updateTimer, 1000);
+                nextRefreshElement.classList.add('pulse');
+                nextRefreshElement.style.display = 'inline';
+            } else {
+                clearInterval(timerInterval);
+                nextRefreshElement.classList.remove('pulse');
+                nextRefreshElement.style.display = 'none';
+            }
+        });
+        
+        // Manual refresh buttons
+        document.querySelectorAll('.refresh-chart').forEach(button => {
+            button.addEventListener('click', function() {
+                const chartType = this.dataset.chart;
+                // Visual feedback for refresh action
+                const icon = this.querySelector('.refresh-icon');
+                icon.style.transform = 'rotate(360deg)';
+                icon.style.transition = 'transform 1s';
+                
+                setTimeout(() => {
+                    icon.style.transform = 'rotate(0deg)';
+                    icon.style.transition = 'none';
+                }, 1000);
+                
+                refreshReadings(chartType);
+            });
+        });
+        
         // Refresh Readings and Charts
-        function refreshReadings() {
+        function refreshReadings(specificChart = null) {
             const patientId = document.getElementById('patient_id').value;
             const url = `/api/data${patientId ? `?patient_id=${patientId}` : ''}`;
-            
+           
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    const tableBody = document.getElementById('readings-table');
-                    let html = '';
-                    const readings = data.readings.reverse();
-
-                    readings.forEach(reading => {
-                        const isDangerous = reading.tachycardia_pred == 1 || 
-                                          reading.hypertrophy_pred == 1 || 
-                                          reading.cholesterol_pred == 1 ||
-                                          reading.heart_rate > 120 ||
-                                          reading.systolic > 160 ||
-                                          reading.diastolic > 100 ||
-                                          reading.spo2 < 92;
-                        
-                        const rowClass = isDangerous ? 'danger' : '';
-                        const notificationClass = reading.notification_sent == 1 ? 'notification-sent' : '';
-                        
-                        html += `
-                            <tr class="${rowClass} ${notificationClass}">
-                                <td>${reading.timestamp}</td>
-                                <td>${reading.patient_name}</td>
-                                <td>${reading.heart_rate} BPM</td>
-                                <td>${reading.blood_pressure}</td>
-                                <td>${reading.spo2}%</td>
-                                <td>${reading.body_temp}°C</td>
-                                <td>${reading.tachycardia_pred == 1 ? 'Yes' : 'No'}</td>
-                                <td>${reading.hypertrophy_pred == 1 ? 'Yes' : 'No'}</td>
-                                <td>${reading.cholesterol_pred == 1 ? 'Yes' : 'No'}</td>
-                            </tr>
-                        `;
-                    });
-                    tableBody.innerHTML = html;
-
-                    const labels = readings.map(reading => reading.timestamp.split(' ')[1]);
-                    const heartRates = readings.map(reading => reading.heart_rate);
-                    const systolic = readings.map(reading => parseInt(reading.blood_pressure.split('/')[0]));
-                    const diastolic = readings.map(reading => parseInt(reading.blood_pressure.split('/')[1]));
-
-                    heartRateChart.data.labels = labels;
-                    heartRateChart.data.datasets[0].data = heartRates;
-                    heartRateChart.update();
-
-                    bpChart.data.labels = labels;
-                    bpChart.data.datasets[0].data = systolic;
-                    bpChart.data.datasets[1].data = diastolic;
-                    bpChart.update();
+                    // If a specific chart is selected, only update that one
+                    if (specificChart === null || specificChart === 'all') {
+                        updateAllData(data);
+                    } else if (specificChart === 'heartRate') {
+                        updateHeartRateChart(data);
+                    } else if (specificChart === 'bp') {
+                        updateBPChart(data);
+                    }
+                    
+                    // Reset timer on manual refresh
+                    if (specificChart !== null && autoRefreshToggle.checked) {
+                        currentTimer = refreshInterval;
+                        nextRefreshElement.textContent = `Next refresh in: ${currentTimer}s`;
+                    }
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Show error notification
+                    showErrorNotification();
+                });
         }
         
-        setInterval(refreshReadings, 30000);
-        refreshReadings();
+        // Show error notification
+        function showErrorNotification() {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed bottom-0 end-0 m-3';
+            alertDiv.innerHTML = `
+                <strong>Connection Error!</strong> Unable to refresh data.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            // Auto dismiss after 5 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+        
+        // Update all data components
+        function updateAllData(data) {
+            updateTable(data);
+            updateHeartRateChart(data);
+            updateBPChart(data);
+        }
+        
+        // Update table data
+        function updateTable(data) {
+            const tableBody = document.getElementById('readings-table');
+            let html = '';
+            const readings = data.readings.reverse();
+            
+            readings.forEach(reading => {
+                const isDangerous = reading.tachycardia_pred == 1 ||
+                                  reading.hypertrophy_pred == 1 ||
+                                  reading.heart_rate > 120 ||
+                                  reading.systolic > 160 ||
+                                  reading.diastolic > 100 ||
+                                  reading.spo2 < 92;
+               
+                const rowClass = isDangerous ? 'danger' : '';
+                const notificationClass = reading.notification_sent == 1 ? 'notification-sent' : '';
+               
+                html += `
+                    <tr class="${rowClass} ${notificationClass}">
+                        <td>${reading.timestamp}</td>
+                        <td>${reading.patient_name}</td>
+                        <td>${reading.heart_rate} BPM</td>
+                        <td>${reading.blood_pressure}</td>
+                        <td>${reading.spo2}%</td>
+                        <td>${reading.body_temp}°C</td>
+                        <td>${reading.tachycardia_pred == 1 ? 'Yes' : 'No'}</td>
+                        <td>${reading.hypertrophy_pred == 1 ? 'Yes' : 'No'}</td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = html;
+        }
+        
+        // Update heart rate chart
+        function updateHeartRateChart(data) {
+            const readings = data.readings;
+            const labels = readings.map(reading => reading.timestamp.split(' ')[1]);
+            const heartRates = readings.map(reading => reading.heart_rate);
+            
+            heartRateChart.data.labels = labels;
+            heartRateChart.data.datasets[0].data = heartRates;
+            heartRateChart.update();
+        }
+        
+        // Update blood pressure chart
+        function updateBPChart(data) {
+            const readings = data.readings;
+            const labels = readings.map(reading => reading.timestamp.split(' ')[1]);
+            const systolic = readings.map(reading => parseInt(reading.blood_pressure.split('/')[0]));
+            const diastolic = readings.map(reading => parseInt(reading.blood_pressure.split('/')[1]));
+            
+            bpChart.data.labels = labels;
+            bpChart.data.datasets[0].data = systolic;
+            bpChart.data.datasets[1].data = diastolic;
+            bpChart.update();
+        }
 
+        // Initial refresh
+        refreshReadings();
+       
         // Chat Functionality
         const chatContainer = document.getElementById('chat-container');
         const toggleChatBtn = document.getElementById('toggle-chat');
@@ -433,15 +575,15 @@
         const chatBody = document.getElementById('chat-body');
         const chatInput = document.getElementById('chat-input');
         const sendMessageBtn = document.getElementById('send-message');
-
+        
         toggleChatBtn.addEventListener('click', () => {
             chatContainer.style.display = chatContainer.style.display === 'block' ? 'none' : 'block';
         });
-
+        
         closeChatBtn.addEventListener('click', () => {
             chatContainer.style.display = 'none';
         });
-
+        
         function sendMessage() {
             const messageText = chatInput.value.trim();
             if (messageText) {
@@ -451,7 +593,7 @@
                 chatBody.appendChild(messageDiv);
                 chatInput.value = '';
                 chatBody.scrollTop = chatBody.scrollHeight;
-
+                
                 setTimeout(() => {
                     const responseDiv = document.createElement('div');
                     responseDiv.classList.add('chat-message', 'received');
@@ -461,8 +603,9 @@
                 }, 1000);
             }
         }
-
+        
         sendMessageBtn.addEventListener('click', sendMessage);
+        
         chatInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 sendMessage();
