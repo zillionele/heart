@@ -239,9 +239,26 @@
                             <td>{{ reading.blood_pressure }}</td>
                             <td>{{ reading.spo2 }}%</td>
                             <td>{{ reading.body_temp }}°C</td>
-                            <td>{{ "Yes" if reading.tachycardia_pred == 1 else "No" }}</td>
-                            <td>{{ "Yes" if reading.hypertrophy_pred == 1 else "No" }}</td>
+<!--                             <td>{{ "Yes" if reading.tachycardia_pred == 1 else "No" }}</td>
+                            <td>{{ "Yes" if reading.hypertrophy_pred == 1 else "No" }}</td> -->
                             <!-- <td>{{ "Yes" if reading.cholesterol_pred == 1 else "No" }}</td> -->
+
+                            <td>
+                {% set bp = reading.blood_pressure|int %}
+                {% if bp < 90 %}
+                    Low
+                {% elif bp >= 90 and bp <= 120 %}
+                    Normal
+                {% elif bp > 120 and bp <= 129 %}
+                    Elevated
+                {% elif bp >= 130 and bp <= 139 %}
+                    High (Stage 1 Hypertension)
+                {% elif bp >= 140 and bp <= 180 %}
+                    High (Stage 2 Hypertension)
+                {% else %}
+                    Hypertensive Crisis (Seek Medical Help)
+                {% endif %}
+            </td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -532,22 +549,23 @@
                         <td>${reading.blood_pressure}</td>
                         <td>${reading.spo2}%</td>
                         <td>${reading.body_temp}°C</td>
-                        <td>
-    {% set bp = reading.blood_pressure|int %}
-    {% if bp < 90 %}
-        Low
-    {% elif bp >= 90 and bp <= 120 %}
-        Normal
-    {% elif bp > 120 and bp <= 129 %}
-        Elevated
-    {% elif bp >= 130 and bp <= 139 %}
-        High (Stage 1 Hypertension)
-    {% elif bp >= 140 and bp <= 180 %}
-        High (Stage 2 Hypertension)
-    {% else %}
-        Hypertensive Crisis (Seek Medical Help)
-    {% endif %}
-</td>
+            //             <td>{{ reading.blood_pressure }}</td>
+            // <td>
+            //     {% set bp = reading.blood_pressure|int %}
+            //     {% if bp < 90 %}
+            //         Low
+            //     {% elif bp >= 90 and bp <= 120 %}
+            //         Normal
+            //     {% elif bp > 120 and bp <= 129 %}
+            //         Elevated
+            //     {% elif bp >= 130 and bp <= 139 %}
+            //         High (Stage 1 Hypertension)
+            //     {% elif bp >= 140 and bp <= 180 %}
+            //         High (Stage 2 Hypertension)
+            //     {% else %}
+            //         Hypertensive Crisis (Seek Medical Help)
+            //     {% endif %}
+            // </td>
                     </tr>
                 `;
             });
