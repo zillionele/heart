@@ -180,6 +180,7 @@
                 </div>
             </div>
         </div>
+ 
         <h2 class="text-uppercase text-red-500 mt-5 mb-3">Critical Trends</h2>
         <div class="row">
             <div class="col-md-6 col-12 mb-3">
@@ -224,36 +225,25 @@
                         <th>BP</th>
                         <th>SpO2</th>
                         <th>Temp</th>
+                        <th>heart beats faster than normal</th>
                         <th>High blood pressure</th>
+                        <!-- <th>Cholesterol</th> -->
                     </tr>
                 </thead>
                 <tbody id="readings-table">
-{% for reading in readings %}
-    <tr class="{{ 'danger' if reading.tachycardia_pred == 1 or reading.hypertrophy_pred == 1 or reading.cholesterol_pred == 1 or reading.heart_rate > 120 or reading.systolic > 160 or reading.diastolic > 100 or reading.spo2 < 92 }} {{ 'notification-sent' if reading.notification_sent == 1 }}">
-        <td>{{ reading.timestamp }}</td>
-        <td>{{ reading.patient_name }}</td>
-        <td>{{ reading.heart_rate }} BPM</td>
-        <td>{{ reading.blood_pressure }}</td>
-        <td>{{ reading.spo2 }}%</td>
-        <td>{{ reading.body_temp }}°C</td>
-        <td>
-            {% set bp = reading.blood_pressure|int %}
-            {% if bp < 90 %}
-                Low
-            {% elif bp >= 90 and bp <= 120 %}
-                Normal
-            {% elif bp > 120 and bp <= 129 %}
-                Elevated
-            {% elif bp >= 130 and bp <= 139 %}
-                High (Stage 1 Hypertension)
-            {% elif bp >= 140 and bp <= 180 %}
-                High (Stage 2 Hypertension)
-            {% else %}
-                Hypertensive Crisis (Seek Medical Help)
-            {% endif %}
-        </td>
-    </tr>
-{% endfor %}
+                    {% for reading in readings %}
+                        <tr class="{{ 'danger' if reading.tachycardia_pred == 1 or reading.hypertrophy_pred == 1 or reading.cholesterol_pred == 1 or reading.heart_rate > 120 or reading.systolic > 160 or reading.diastolic > 100 or reading.spo2 < 92 }} {{ 'notification-sent' if reading.notification_sent == 1 }}">
+                            <td>{{ reading.timestamp }}</td>
+                            <td>{{ reading.patient_name }}</td>
+                            <td>{{ reading.heart_rate }} BPM</td>
+                            <td>{{ reading.blood_pressure }}</td>
+                            <td>{{ reading.spo2 }}%</td>
+                            <td>{{ reading.body_temp }}°C</td>
+                            <td>{{ "Yes" if reading.tachycardia_pred == 1 else "No" }}</td>
+                            <td>{{ "Yes" if reading.blood_pressure >= 130 else "No" }}</td>
+                            <!-- <td>{{ "Yes" if reading.cholesterol_pred == 1 else "No" }}</td> -->
+                        </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
@@ -307,6 +297,7 @@
                 </div>
             </div>
         </div>
+       
         <div class="col-md-6 col-12 mb-3">
             {% if selected_patient %}
                 <div class="card">
@@ -467,7 +458,7 @@
         function refreshReadings(specificChart = null) {
             const patientId = document.getElementById('patient_id').value;
             const url = `/api/data${patientId ? `?patient_id=${patientId}` : ''}`;
-            
+           
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
@@ -524,15 +515,15 @@
             
             readings.forEach(reading => {
                 const isDangerous = reading.tachycardia_pred == 1 ||
-                                    reading.hypertrophy_pred == 1 ||
-                                    reading.heart_rate > 120 ||
-                                    reading.systolic > 160 ||
-                                    reading.diastolic > 100 ||
-                                    reading.spo2 < 92;
-                
+                                  reading.hypertrophy_pred == 1 ||
+                                  reading.heart_rate > 120 ||
+                                  reading.systolic > 160 ||
+                                  reading.diastolic > 100 ||
+                                  reading.spo2 < 92;
+               
                 const rowClass = isDangerous ? 'danger' : '';
                 const notificationClass = reading.notification_sent == 1 ? 'notification-sent' : '';
-                
+               
                 html += `
                     <tr class="${rowClass} ${notificationClass}">
                         <td>${reading.timestamp}</td>
@@ -541,22 +532,8 @@
                         <td>${reading.blood_pressure}</td>
                         <td>${reading.spo2}%</td>
                         <td>${reading.body_temp}°C</td>
-                        <td>
-                            {% set bp = reading.blood_pressure|int %}
-                            {% if bp < 90 %}
-                                Low
-                            {% elif bp >= 90 and bp <= 120 %}
-                                Normal
-                            {% elif bp > 120 and bp <= 129 %}
-                                Elevated
-                            {% elif bp >= 130 and bp <= 139 %}
-                                High (Stage 1 Hypertension)
-                            {% elif bp >= 140 and bp <= 180 %}
-                                High (Stage 2 Hypertension)
-                            {% else %}
-                                Hypertensive Crisis (Seek Medical Help)
-                            {% endif %}
-                        </td>
+                        <td>${reading.tachycardia_pred == 1 ? 'Yes' : 'No'}</td>
+                        <td>${reading.hypertrophy_pred == 1 ? 'Yes' : 'No'}</td>
                     </tr>
                 `;
             });
@@ -590,7 +567,7 @@
 
         // Initial refresh
         refreshReadings();
-        
+       
         // Chat Functionality
         const chatContainer = document.getElementById('chat-container');
         const toggleChatBtn = document.getElementById('toggle-chat');
