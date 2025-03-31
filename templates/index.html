@@ -240,7 +240,8 @@
                             <td>{{ reading.spo2 }}%</td>
                             <td>{{ reading.body_temp }}°C</td>
                             <td>{{ "Yes" if reading.tachycardia_pred == 1 else "No" }}</td>
-                            <td>{{ "Yes" if reading.blood_pressure >= 130 else "No" }}</td>
+                           <td>{{ "Yes" if reading.blood_pressure|int(default=0) >= 130 else "No" }}</td>
+
                             <!-- <td>{{ "Yes" if reading.cholesterol_pred == 1 else "No" }}</td> -->
                         </tr>
                     {% endfor %}
